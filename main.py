@@ -6,7 +6,7 @@ from telebot.types import Message
 
 from environ_variables import TELEBOT_TOKEN, SPREADSHEET_ID
 from validators import validate_time_command
-from work_with_sheet import write_in_sheet, clean_orders
+from google_api import make_order, clean_orders
 
 bot = telebot.TeleBot(TELEBOT_TOKEN)
 
@@ -50,7 +50,7 @@ def food_ordering(message: Message):
     full_string = message.text.split()
     full_name = f'{full_string[1]} {full_string[2]}'
     order = ' '.join(word for word in full_string[3:])
-    if write_in_sheet(full_name, order):
+    if make_order(full_name, order):
         bot.send_message(message.chat.id, 'Заказ произведен успешно. Не забудьте произвести оплату.')
     else:
         bot.send_message(message.chat.id, 'Возникли проблемы при заполнении таблицы.')

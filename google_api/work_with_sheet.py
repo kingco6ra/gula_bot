@@ -14,7 +14,7 @@ def get_all_rows_with_names(ranges):
                                                range=ranges).execute()
 
 
-def write_in_sheet(name: str, order: str) -> bool:
+def make_order(name: str, order: str) -> bool:
     sheet_values = get_all_rows_with_names(RANGES_FOR_NAME_COLUMN)['values']
     weekday = {
         1: 'B',

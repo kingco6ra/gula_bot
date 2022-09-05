@@ -4,7 +4,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 from environ_variables import API_KEY
 
-CREDENTIALS_FILE = 'token.json'
+CREDENTIALS_FILE = '../token.json'
 
 
 def get_service():
