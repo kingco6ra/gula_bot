@@ -1,10 +1,12 @@
+import os
+
 import httplib2
 from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 
 from environ_variables import API_KEY
 
-CREDENTIALS_FILE = '../token.json'
+CREDENTIALS_FILE = f'{os.getcwd()}/google_api/token.json'
 
 
 def get_service():

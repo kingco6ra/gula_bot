@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from time import sleep
 
@@ -9,6 +10,8 @@ from validators import validate_time_command
 from google_api import make_order, clean_orders
 
 bot = telebot.TeleBot(TELEBOT_TOKEN)
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+log = logging.getLogger(__name__)
 
 
 @bot.message_handler(commands=['start'])
@@ -50,7 +53,10 @@ def food_ordering(message: Message):
     full_string = message.text.split()
     full_name = f'{full_string[1]} {full_string[2]}'
     order = ' '.join(word for word in full_string[3:])
-    if make_order(full_name, order):
+    status, msg = make_order(full_name, order)
+    if status:
+        if msg:
+            bot.send_message(message.chat.id, *msg)
         bot.send_message(message.chat.id, 'Заказ произведен успешно. Не забудьте произвести оплату.')
     else:
         bot.send_message(message.chat.id, 'Возникли проблемы при заполнении таблицы.')
@@ -79,4 +85,5 @@ def food_is_comming(message: Message):
 #     bot.send_message(message.chat.id, menu_text)
 
 if __name__ == '__main__':
+    log.info('bot was been started')
     bot.infinity_polling()
