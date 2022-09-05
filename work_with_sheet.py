@@ -4,9 +4,18 @@ from datetime import datetime
 from environ_variables import SPREADSHEET_ID
 from init_sheet import get_service
 
+SERVICE = get_service()
+RANGES_FOR_NAME_COLUMN = 'A1:A50'
+FULL_WEEK = 'B2:F100'
 
-def write_in_sheet(name: str, order: str):
-    service = get_service()
+
+def get_all_rows_with_names(ranges):
+    return SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
+                                               range=ranges).execute()
+
+
+def write_in_sheet(name: str, order: str) -> bool:
+    sheet_values = get_all_rows_with_names(RANGES_FOR_NAME_COLUMN)['values']
     weekday = {
         1: 'B',
         2: 'C',
@@ -14,18 +23,14 @@ def write_in_sheet(name: str, order: str):
         4: 'E',
         5: 'F'
     }.get(datetime.now().isoweekday())
-    ranges = 'A1:A50'
-    result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
-                                                 range=ranges).execute()
 
-    sheet_values: list[list] = result['values']
     try:
         # Под индексом 1 - пустая строка. Поэтому добавляем 1 к получившемуся результату.
         row_id = sheet_values.index([name]) + 1
     except ValueError:
         return False
 
-    service.spreadsheets().values().batchUpdate(spreadsheetId=SPREADSHEET_ID, body={
+    SERVICE.spreadsheets().values().batchUpdate(spreadsheetId=SPREADSHEET_ID, body={
         "valueInputOption": "USER_ENTERED",  # Данные воспринимаются, как вводимые пользователем (считается значение формул)
         "data": [
             {
@@ -38,16 +43,17 @@ def write_in_sheet(name: str, order: str):
     return True
 
 
-def clean_week():
-    full_week = 'B2:F113'
+def clean_orders() -> None:
     service = get_service()
-    return service.spreadsheets().values().batchUpdate(spreadsheetId=SPREADSHEET_ID, body={
+    service.spreadsheets().values().batchUpdate(spreadsheetId=SPREADSHEET_ID, body={
         "valueInputOption": "USER_ENTERED",
         "data": [
             {
-                "range": f"{full_week}",
-                "majorDimension": "ROWS",
-                "values": [['']],
+                "range": f"{FULL_WEEK}",
+                'majorDimension': 'ROWS',
+                "values": [
+                    ['' for _ in range(5)] for _ in range(len(get_all_rows_with_names(RANGES_FOR_NAME_COLUMN)['values']))
+                ],
             }
         ]
     }).execute()
