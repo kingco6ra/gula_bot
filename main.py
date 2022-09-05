@@ -42,7 +42,7 @@ def enable_notify(message: Message):
                 clean_orders()
             sleep(60)
     else:
-        bot.send_message(message.chat.id, f'Ошибка. {error}')
+        bot.send_message(message.chat.id, parse_mode='HTML', text=f'Ошибка. {error}')
 
 
 @bot.message_handler(commands=['order'])

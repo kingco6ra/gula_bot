@@ -8,7 +8,6 @@ CREDENTIALS_FILE = 'token.json'
 
 
 def get_service():
-    # Читаем ключи из файла
     credentials = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE,
                                                                    ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'])
 
