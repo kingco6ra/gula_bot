@@ -1,11 +1,15 @@
 import logging
+import os
 from datetime import datetime
+from sqlite3 import OperationalError
 from time import sleep
 
 import telebot
 from telebot.types import Message
 
+from db_conn import insert_menu, get_menu
 from environ_variables import TELEBOT_TOKEN, SPREADSHEET_ID
+from parse import parse_menu
 from validators import validate_time_command
 from google_api import make_order, clean_orders
 
@@ -38,8 +42,19 @@ def enable_notify(message: Message):
             now_time = datetime.now().strftime("%H:%M")
             weekday = datetime.now().isoweekday()
 
-            if now_time == alert_time and weekday not in (6, 7):
+            if now_time == now_time and weekday not in (6, 7):
                 bot.send_message(message.chat.id, 'Доброе утро! Не забываем про заказ еды. Хорошего дня.')
+                try:
+                    menu = '\n'.join(get_menu({
+                                        1: 'ПНД',
+                                        2: 'ВТ',
+                                        3: 'СР',
+                                        4: 'ЧТВ',
+                                        5: 'ПТН'
+                                    }.get(weekday)).split(','))
+                    bot.send_message(message.chat.id, parse_mode='HTML', text=f'Вот меню на сегодня: \n <pre>{menu}</pre>')
+                except OperationalError:
+                    pass
                 table_is_clean = False
             if weekday == 6 and not table_is_clean:
                 clean_orders()
@@ -87,16 +102,16 @@ def food_is_comming(message: Message):
             bot.send_animation(message.chat.id, gif)
 
 
-# TODO: раскомментировать, когда будет ясно как парсить эксель документ, который нам кидают каждую неделю.
-# @bot.message_handler(content_types=['document'])
-# def get_week_menu(message: Message):
-#     """Скачиваем и парсим XLSX чтобы получить еженедельное меню в TXT формате"""
-#     menu_dir = f'{os.getcwd()}/src/menus/{message.document.file_name}'
-#     document = bot.download_file(bot.get_file(message.document.file_id).file_path)
-#     with open(menu_dir, 'wb') as menu:
-#         menu.write(document)
-#     menu_text = parse_menu(menu_dir)
-#     bot.send_message(message.chat.id, menu_text)
+@bot.message_handler(content_types=['document'])
+def get_week_menu(message: Message):
+    """Скачиваем и парсим XLSX чтобы получить еженедельное меню в TXT формате"""
+    menu_dir = f'{os.getcwd()}/src/menus/{message.document.file_name}'
+    document = bot.download_file(bot.get_file(message.document.file_id).file_path)
+    with open(menu_dir, 'wb') as menu:
+        menu.write(document)
+    insert_menu(parse_menu(menu_dir))
+    bot.send_message(message.chat.id, 'Меню было успешно занесено в базу данных.')
+
 
 if __name__ == '__main__':
     log.info('bot was been started')
