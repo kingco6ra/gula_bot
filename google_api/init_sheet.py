@@ -14,7 +14,7 @@ def get_service():
                                                                    ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'])
 
     httpAuth = credentials.authorize(httplib2.Http())  # Авторизуемся в системе
-    return build('sheets', 'v4', developerKey=API_KEY, http=httpAuth)
+    return build('sheets', 'v4', developerKey=API_KEY, http=httpAuth).spreadsheets()
 
 
 def get_init_table(service):

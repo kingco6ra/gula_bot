@@ -52,11 +52,12 @@ def enable_notify(message: Message):
 def food_ordering(message: Message):
     full_string = message.text.split()
     full_name = f'{full_string[1]} {full_string[2]}'
-    order = ' '.join(word for word in full_string[3:])
-    status, msg = make_order(full_name, order)
+
+    status, msg = make_order(full_name, message.text.split('\n')[1:])
+    if msg:
+        bot.send_message(message.chat.id, *msg)
+
     if status:
-        if msg:
-            bot.send_message(message.chat.id, *msg)
         bot.send_message(message.chat.id, 'Заказ произведен успешно. Не забудьте произвести оплату.')
     else:
         bot.send_message(message.chat.id, 'Возникли проблемы при заполнении таблицы.')
