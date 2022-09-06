@@ -63,6 +63,19 @@ def food_ordering(message: Message):
         bot.send_message(message.chat.id, 'Возникли проблемы при заполнении таблицы.')
 
 
+@bot.message_handler(commands=['help'])
+def get_help(message: Message):
+    bot.send_message(message.chat.id, parse_mode='HTML', text=f'Как сделать заказ:\n'
+                                                              '<pre>'
+                                                              '/order Пупкин В.\n'
+                                                              'ПН: мясо, курица, рыба\n'
+                                                              'ЧТ: суп, второе, салат'
+                                                              '</pre>'
+                                                              'Я и автоматически запишу заказ в таблицу:')
+    with open('src/help.jpg', 'rb') as photo:
+        bot.send_photo(message.chat.id, photo)
+
+
 @bot.message_handler(content_types=['text'])
 def food_is_comming(message: Message):
     """Хэндлер фраз-крючков, по нахождению которых - желаем приятного аппетита"""
