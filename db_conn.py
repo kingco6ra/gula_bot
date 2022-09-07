@@ -12,28 +12,18 @@ def create_week_table():
     log.info('creating week table')
     with connect:
         cursor = connect.cursor()
-        try:
-            cursor.execute(
-                f'''
-                    create table "{DAY_MONTH}"
-                        (
-                            weekday TEXT not null,
-                            menu    TEXT not null
-                        )
-                ''')
-        except OperationalError:
-            log.warning('table already exists. drop table')
-            cursor.execute(
-                f'''
-                DROP TABLE {DAY_MONTH}
-                '''
-            )
-            log.info('table was been dropped')
-            create_week_table()
+        cursor.execute(
+            f'''
+                create table "{DAY_MONTH}"
+                    (
+                        weekday TEXT not null,
+                        menu    TEXT not null
+                    )
+            ''')
+
 
 
 def insert_menu(menu: dict[str, list[str]]):
-    create_week_table()
     log.info('insert new menu')
     for weekday, line in menu.items():
         line = ' | '.join(line)
@@ -58,3 +48,4 @@ def get_menu(weekday):
 
     menu = cursor.fetchall()[0][1]
     return menu.rstrip()
+create_week_table()

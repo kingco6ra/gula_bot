@@ -7,7 +7,7 @@ from time import sleep
 import telebot
 from telebot.types import Message
 
-from db_conn import insert_menu, get_menu
+from db_conn import insert_menu, get_menu, create_week_table
 from environ_variables import TELEBOT_TOKEN, SPREADSHEET_ID
 from parse import parse_menu
 from validators import validate_time_command
@@ -126,8 +126,12 @@ def get_new_week_menu(message: Message):
     document = bot.download_file(bot.get_file(message.document.file_id).file_path)
     with open(menu_dir, 'wb') as menu:
         menu.write(document)
-    insert_menu(parse_menu(menu_dir))
-    bot.send_message(message.chat.id, 'Меню было успешно занесено в базу данных.')
+    try:
+        create_week_table()
+        insert_menu(parse_menu(menu_dir))
+        bot.send_message(message.chat.id, 'Меню было успешно занесено в базу данных.')
+    except OperationalError:
+        bot.send_message(message.chat.id, 'Меню для этой недели уже загружено в базу данных.')
 
 
 if __name__ == '__main__':
