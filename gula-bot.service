@@ -1,0 +1,16 @@
+[Unit]
+Description=Gula-bot
+After=syslog.target
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/usr/share/gula_bot
+ExecStart=/usr/bin/python3 /usr/share/gula_bot/main.py
+ExecReload=/usr/bin/python3 /usr/share/gula_bot/main.py
+RestartSec=10
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

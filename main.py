@@ -108,6 +108,11 @@ def get_week_menu(message: Message):
     bot.send_message(message.chat.id, parse_mode='HTML', text=f'<pre>{menu}</pre>')
 
 
+@bot.message_handler(commands=['update'])
+def update(message: Message):
+    bot.send_message(message.chat.id, 'Начинаю обновление...')
+
+
 @bot.message_handler(content_types=['text'])
 def food_is_comming(message: Message):
     """Хэндлер фраз-крючков, по нахождению которых - желаем приятного аппетита"""

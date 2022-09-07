@@ -10,9 +10,7 @@ dbstream==0.1.15
 decouple==0.0.7
 et-xmlfile==1.1.0
 google-api-core==2.10.0
-google-api-python-client==2.58.0
 google-auth==2.11.0
-google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.5.2
 google-cloud-bigquery==3.3.2
 google-cloud-bigquery-storage==2.14.2
@@ -21,7 +19,6 @@ google-cloud-secret-manager==2.7.2
 google-crc32c==1.5.0
 google-resumable-media==2.3.3
 googleapis-common-protos==1.56.4
-googleauthentication==0.0.16
 grpc-google-iam-v1==0.12.4
 grpcio==1.48.1
 grpcio-status==1.48.1
