@@ -55,6 +55,3 @@ def get_menu(weekday: str, table_name: str):
         if '' not in item:
             menu.append(item)
     return menu
-
-
-print(get_menu('ВТ'))
