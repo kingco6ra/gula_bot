@@ -46,6 +46,7 @@ def enable_notify(message: Message):
     table_is_clean = True
     if status:
         bot.send_message(message.chat.id, f'Напоминания успешно включены. Время напоминания - {alert_time}')
+        table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'
         while True:
             now_time = datetime.now().strftime("%H:%M")
             weekday = datetime.now().isoweekday()
@@ -53,8 +54,7 @@ def enable_notify(message: Message):
             if now_time == alert_time and weekday not in (6, 7):
                 bot.send_message(message.chat.id, 'Доброе утро! Не забываем про заказ еды. Хорошего дня.')
                 try:
-                    # TODO: улучшить вывод
-                    menu = '\n'.join(get_menu(weekdays.get(weekday)).split(' | '))
+                    menu = '\n'.join(get_menu(weekdays.get(weekday), table_name).split(' | '))
                     bot.send_message(message.chat.id, parse_mode='HTML', text=f'Вот меню на сегодня: \n <pre>{menu}</pre>')
                 except OperationalError:
                     pass
@@ -99,13 +99,14 @@ def get_help(message: Message):
 def get_week_menu(message: Message):
     """Получаем меню"""
     today = datetime.now().isoweekday()
+    table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'
     try:
         weekday = message.text.split()[1].upper()
         weekday = weekday if weekday in weekdays.values() else weekdays.get(today)
-        menu = '\n'.join(get_menu(weekday).split(' | '))
+        menu = '\n'.join(get_menu(weekday, table_name).split(' | '))
         bot.send_message(message.chat.id, parse_mode='HTML', text=f'<pre>{menu}</pre>')
     except IndexError:
-        menu = '\n'.join(get_menu(weekdays.get(today)).split(' | '))
+        menu = '\n'.join(get_menu(weekdays.get(today), table_name).split(' | '))
         bot.send_message(message.chat.id, parse_mode='HTML', text=f'<pre>{menu}</pre>')
     except OperationalError:
         bot.send_message(message.chat.id, 'Меню этой недели еще не было занесено в базу данных.')
@@ -138,11 +139,13 @@ def get_new_week_menu(message: Message):
     """Скачиваем и парсим XLSX чтобы получить еженедельное меню в TXT формате"""
     menu_dir = f'{os.getcwd()}/src/menus/{message.document.file_name}'
     document = bot.download_file(bot.get_file(message.document.file_id).file_path)
+    table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'
     with open(menu_dir, 'wb') as menu:
         menu.write(document)
     try:
-        create_week_table()
-        insert_menu(parse_menu(menu_dir))
+        create_week_table(table_name)
+        menu = parse_menu(menu_dir)
+        insert_menu(menu, table_name)
         bot.send_message(message.chat.id, 'Меню было успешно занесено в базу данных.')
     except OperationalError:
         bot.send_message(message.chat.id, 'Меню для этой недели уже загружено в базу данных.')
