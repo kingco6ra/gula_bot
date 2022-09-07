@@ -2,6 +2,7 @@ import logging
 import os
 from datetime import datetime
 from sqlite3 import OperationalError
+from subprocess import run
 from time import sleep
 
 import telebot
@@ -111,7 +112,10 @@ def get_week_menu(message: Message):
 @bot.message_handler(commands=['update'])
 def update(message: Message):
     bot.send_message(message.chat.id, 'Начинаю обновление...')
-
+    run(['git', 'fetch'])
+    run(['git', 'pull'])
+    run(['cp', 'gula-bot.service', '/etc/systemd/system'])
+    run(['systemctl', 'restart', 'gula-bot'])
 
 @bot.message_handler(content_types=['text'])
 def food_is_comming(message: Message):
