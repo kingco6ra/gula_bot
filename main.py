@@ -16,6 +16,13 @@ from google_api import make_order, clean_orders
 bot = telebot.TeleBot(TELEBOT_TOKEN)
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 log = logging.getLogger(__name__)
+weekdays = {
+    1: 'ПНД',
+    2: 'ВТ',
+    3: 'СР',
+    4: 'ЧТВ',
+    5: 'ПТН'
+}
 
 
 @bot.message_handler(commands=['start'])
@@ -42,22 +49,18 @@ def enable_notify(message: Message):
             now_time = datetime.now().strftime("%H:%M")
             weekday = datetime.now().isoweekday()
 
-            if now_time == now_time and weekday not in (6, 7):
+            if now_time == alert_time and weekday not in (6, 7):
                 bot.send_message(message.chat.id, 'Доброе утро! Не забываем про заказ еды. Хорошего дня.')
                 try:
-                    menu = '\n'.join(get_menu({
-                                        1: 'ПНД',
-                                        2: 'ВТ',
-                                        3: 'СР',
-                                        4: 'ЧТВ',
-                                        5: 'ПТН'
-                                    }.get(weekday)).split(','))
+                    # TODO: улучшить вывод
+                    menu = '\n'.join(get_menu(weekdays.get(weekday)).split(' | '))
                     bot.send_message(message.chat.id, parse_mode='HTML', text=f'Вот меню на сегодня: \n <pre>{menu}</pre>')
                 except OperationalError:
                     pass
                 table_is_clean = False
             if weekday == 6 and not table_is_clean:
                 clean_orders()
+                bot.send_message(message.chat.id, 'Таблица заказов была успешно очищена. Хороших Выходных')
             sleep(60)
     else:
         bot.send_message(message.chat.id, parse_mode='HTML', text=f'Ошибка. {error}')
@@ -91,6 +94,20 @@ def get_help(message: Message):
         bot.send_photo(message.chat.id, photo)
 
 
+@bot.message_handler(commands=['menu'])
+def get_week_menu(message: Message):
+    """Получаем меню"""
+    today = datetime.now().isoweekday()
+    try:
+        weekday = message.text.split()[1].upper()
+        weekday = weekday if weekday in weekdays.values() else weekdays.get(today)
+        menu = '\n'.join(get_menu(weekday).split(' | '))
+    except IndexError:
+        menu = '\n'.join(get_menu(weekdays.get(today)).split(' | '))
+
+    bot.send_message(message.chat.id, parse_mode='HTML', text=f'<pre>{menu}</pre>')
+
+
 @bot.message_handler(content_types=['text'])
 def food_is_comming(message: Message):
     """Хэндлер фраз-крючков, по нахождению которых - желаем приятного аппетита"""
@@ -103,7 +120,7 @@ def food_is_comming(message: Message):
 
 
 @bot.message_handler(content_types=['document'])
-def get_week_menu(message: Message):
+def get_new_week_menu(message: Message):
     """Скачиваем и парсим XLSX чтобы получить еженедельное меню в TXT формате"""
     menu_dir = f'{os.getcwd()}/src/menus/{message.document.file_name}'
     document = bot.download_file(bot.get_file(message.document.file_id).file_path)
