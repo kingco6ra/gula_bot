@@ -103,10 +103,12 @@ def get_week_menu(message: Message):
         weekday = message.text.split()[1].upper()
         weekday = weekday if weekday in weekdays.values() else weekdays.get(today)
         menu = '\n'.join(get_menu(weekday).split(' | '))
+        bot.send_message(message.chat.id, parse_mode='HTML', text=f'<pre>{menu}</pre>')
     except IndexError:
         menu = '\n'.join(get_menu(weekdays.get(today)).split(' | '))
-
-    bot.send_message(message.chat.id, parse_mode='HTML', text=f'<pre>{menu}</pre>')
+        bot.send_message(message.chat.id, parse_mode='HTML', text=f'<pre>{menu}</pre>')
+    except OperationalError:
+        bot.send_message(message.chat.id, 'Меню этой недели еще не было занесено в базу данных.')
 
 
 @bot.message_handler(commands=['update'])
