@@ -22,7 +22,6 @@ def create_week_table():
             ''')
 
 
-
 def insert_menu(menu: dict[str, list[str]]):
     log.info('insert new menu')
     for weekday, line in menu.items():
@@ -33,7 +32,7 @@ def insert_menu(menu: dict[str, list[str]]):
                 f'''
             INSERT INTO {DAY_MONTH} VALUES('{weekday}', '{line}')'''
             )
-    log.info('new menu has')
+    log.info('new menu has been writed')
 
 
 def get_menu(weekday):
@@ -48,4 +47,3 @@ def get_menu(weekday):
 
     menu = cursor.fetchall()[0][1]
     return menu.rstrip()
-create_week_table()
