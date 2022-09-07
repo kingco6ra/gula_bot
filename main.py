@@ -116,8 +116,8 @@ def update(message: Message):
     log.info(run(['git', 'fetch']))
     log.info(run(['git', 'pull']))
     log.info(run(['cp', 'gula-bot.service', '/etc/systemd/system/']))
-    log.info(run(['systemctl', 'restart', 'gula-bot']))
     bot.send_message(message.chat.id, 'Обновление выполнено успешно!')
+    log.info(run(['systemctl', 'restart', 'gula-bot']))
 
 
 @bot.message_handler(content_types=['text'])
