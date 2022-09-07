@@ -58,7 +58,3 @@ def parse_menu(menu_dir: str) -> dict:
         }
     return new_menu
 
-
-menu = parse_menu('/home/cobra/gula_bot/src/menus/Menu_05.09-09.09.22.xlsx')
-for weekday, food in menu.items():
-    print(weekday, food['soup'])
