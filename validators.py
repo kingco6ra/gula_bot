@@ -10,7 +10,10 @@ def validate_time_command(command: list) -> tuple[bool, str, str | None]:
     time = command[1]
     wrong_time_format = 'Неправильный формат времени или сообщения.' \
                         ' Время должно быть в 24 часовом формате, с учетом нолей. Сообщение правильного формата:' \
-                        ' <pre>/notify 04:04</pre>'
+                        ' <pre>/notify 04:04</pre>' \
+                        'Также вы можете ввести: ' \
+                        '<pre>/notify</pre>' \
+                        'Для того чтобы установить напоминания на 09:00.'
 
     try:
         hrs, mins = map(lambda x: int(x), time.split(':'))

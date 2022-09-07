@@ -16,6 +16,7 @@ def create_week_table(table_name: str):
                         weekday TEXT not null,
                         soup    TEXT not null,
                         second_course TEXT not null,
+                        garnish TEXT not null,
                         salad TEXT not null 
                     )
             ''')
@@ -25,15 +26,17 @@ def create_week_table(table_name: str):
 def insert_menu(menu: dict[str, [str, [list[str]]]], table_name: str):
     log.info('Writing new menu in table.')
     for weekday, food in menu.items():
-        soup = ', '.join(food['soup'])
-        second_course = ', '.join(food['second_course'])
-        salad = ', '.join(food['salad'])
+        soup = '\n'.join(food['soup'])
+        second_course = '\n'.join(food['second_course'])
+        garnish = '\n'.join(food['garnish'])
+        salad = '\n'.join(food['salad'])
         with connect:
             cursor = connect.cursor()
             cursor.execute(
                 f'''
             INSERT INTO {table_name} VALUES(
-            '{weekday}', '{soup}', '{second_course}', '{salad}'
+            '{weekday}', '{soup}', '{second_course}', '{garnish}', '{salad}'
+            )
             ''')
     log.info('New menu has been writed.')
 
@@ -47,11 +50,8 @@ def get_menu(weekday: str, table_name: str):
             WHERE weekday = '{weekday}'
             '''
         )
-
     menu = []
-    for item in cursor.fetchall()[0][1].split(' | '):
-        item = item.split(' или ')
-        print(item)
-        if '' not in item:
-            menu.append(item)
+    for i in cursor.fetchall()[0][1:]:
+        food = ' ИЛИ '.join(i.split(' | ')) + '\n'
+        menu.append(food)
     return menu

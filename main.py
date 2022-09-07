@@ -46,15 +46,16 @@ def enable_notify(message: Message):
     table_is_clean = True
     if status:
         bot.send_message(message.chat.id, f'Напоминания успешно включены. Время напоминания - {alert_time}')
-        table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'
+        table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
         while True:
             now_time = datetime.now().strftime("%H:%M")
             weekday = datetime.now().isoweekday()
 
             if now_time == alert_time and weekday not in (6, 7):
                 bot.send_message(message.chat.id, 'Доброе утро! Не забываем про заказ еды. Хорошего дня.')
+                today = weekdays.get(datetime.now().isoweekday())
                 try:
-                    menu = '\n'.join(get_menu(weekdays.get(weekday), table_name).split(' | '))
+                    menu = '\n'.join(get_menu(today, table_name))
                     bot.send_message(message.chat.id, parse_mode='HTML', text=f'Вот меню на сегодня: \n <pre>{menu}</pre>')
                 except OperationalError:
                     pass
@@ -90,26 +91,34 @@ def get_help(message: Message):
                                                               'ПН: мясо, курица, рыба\n'
                                                               'ЧТ: суп, второе, салат'
                                                               '</pre>'
-                                                              'Я и автоматически запишу заказ в таблицу:')
+                                                              'И я автоматически запишу заказ в таблицу:')
     with open('src/help.jpg', 'rb') as photo:
         bot.send_photo(message.chat.id, photo)
 
 
 @bot.message_handler(commands=['menu'])
 def get_week_menu(message: Message):
-    """Получаем меню"""
-    today = datetime.now().isoweekday()
-    table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'
-    try:
-        weekday = message.text.split()[1].upper()
-        weekday = weekday if weekday in weekdays.values() else weekdays.get(today)
-        menu = '\n'.join(get_menu(weekday, table_name).split(' | '))
-        bot.send_message(message.chat.id, parse_mode='HTML', text=f'<pre>{menu}</pre>')
-    except IndexError:
-        menu = '\n'.join(get_menu(weekdays.get(today), table_name).split(' | '))
-        bot.send_message(message.chat.id, parse_mode='HTML', text=f'<pre>{menu}</pre>')
-    except OperationalError:
-        bot.send_message(message.chat.id, 'Меню этой недели еще не было занесено в базу данных.')
+    """
+    /order - получить сегодняшнее меню
+    /order ПНД - получить меню на понедельник
+    :param message:
+    :return:
+    """
+    today = weekdays.get(datetime.now().isoweekday())
+    table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
+    if message.text == '/menu':
+        menu = '\n'.join(get_menu(today, table_name))
+        bot.send_message(message.chat.id, parse_mode='HTML', text=f'Меню на сегодня:\n\n'
+                                                                  f'<pre>{menu}</pre>')
+    elif message.text.split()[1].upper() in weekdays.values():
+        day = message.text.split()[1].upper()
+        menu = '\n'.join(get_menu(day, table_name))
+        bot.send_message(message.chat.id, parse_mode='HTML', text=f'Меню на {day}:\n\n'
+                                                                  f'<pre>{menu}</pre>')
+    else:
+        bot.send_message(message.chat.id, parse_mode='HTML', text=f'Неправильный формат команды. Убедитесь в том, что вы правильно ввели команду:\n'
+                                                                  f'<pre>/menu $DAY - где $DAY: ПТН, ВТ, СР, ЧТВ, ПНД</pre>'
+                                                                  f'Для того чтобы получить меню на сегодня: <pre>/menu</pre>')
 
 
 @bot.message_handler(commands=['update'])
@@ -139,7 +148,7 @@ def get_new_week_menu(message: Message):
     """Скачиваем и парсим XLSX чтобы получить еженедельное меню в TXT формате"""
     menu_dir = f'{os.getcwd()}/src/menus/{message.document.file_name}'
     document = bot.download_file(bot.get_file(message.document.file_id).file_path)
-    table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'
+    table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
     with open(menu_dir, 'wb') as menu:
         menu.write(document)
     try:

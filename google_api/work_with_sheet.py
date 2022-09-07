@@ -45,7 +45,6 @@ def write_in_table(body):
 
 def make_order(name: str, order: list) -> tuple[bool, list[str]]:
     log.info('start ordering')
-    # TODO: добавить возможность делать заказы на определенные дни недели
     sheet_values = get_rows(RANGES_FOR_NAME_COLUMN)['values']
     msg = []
     order_dict = {}

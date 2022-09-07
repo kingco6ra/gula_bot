@@ -39,6 +39,7 @@ def parse_menu(menu_dir: str) -> dict:
     for weekday, line in menu.items():
         soup = None
         second_course = None
+        garnish = None
         salad = None
         counter = 0
         for food in line:
@@ -47,14 +48,14 @@ def parse_menu(menu_dir: str) -> dict:
             if counter == 1:
                 second_course = food.split(' или ')
             if counter == 2:
-                second_course.extend(food.split(' или '))
+                garnish = food.split(' или ')
             if counter == 3:
                 salad = food.split(' или ')
             counter += 1
         new_menu[weekday] = {
             'soup': soup,
             'second_course': second_course,
+            'garnish': garnish,
             'salad': salad
         }
     return new_menu
-
