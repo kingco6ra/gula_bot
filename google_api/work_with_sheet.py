@@ -20,11 +20,11 @@ def get_rows(ranges):
 def get_weekday(weekday: str | None):
     if weekday:
         return {
-            'ПН': 'B',
+            'ПНД': 'B',
             'ВТ': 'C',
             'СР': 'D',
-            'ЧТ': 'E',
-            'ПТ': 'F'
+            'ЧТВ': 'E',
+            'ПТН': 'F'
         }.get(weekday, None)
 
     return {
@@ -50,7 +50,7 @@ def make_order(name: str, order: list) -> tuple[bool, list[str]]:
     order_dict = {}
     for line in order:
         day, food_list = line.split(':')
-        index_day = get_weekday(day)
+        index_day = get_weekday(day.upper())
         if index_day is None:
             msg.append(f'Заказ не был совершен. Убедитесь что аббревиатура дня недели была заполнена верно. Вы ввели: {day}')
             return False, msg
@@ -84,13 +84,14 @@ def make_order(name: str, order: list) -> tuple[bool, list[str]]:
         log.info('new user was been created.')
 
     for day, food_list in order_dict.items():
+        food_list = food_list.replace(', ', '\n').lstrip(' ')
         body = {
             "valueInputOption": "USER_ENTERED",
             "data": [
                 {
                     "range": f"{day}{row_id}",
                     "majorDimension": "ROWS",
-                    "values": [[food_list.lstrip()]],
+                    "values": [[food_list]],
                 }
             ]
         }

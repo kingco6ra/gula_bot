@@ -15,7 +15,7 @@ from validators import validate_time_command
 from google_api import make_order, clean_orders
 
 bot = telebot.TeleBot(TELEBOT_TOKEN)
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(message)s', level=logging.INFO)
 log = logging.getLogger(__name__)
 weekdays = {
     1: 'ПНД',
@@ -45,12 +45,13 @@ def enable_notify(message: Message):
     status, alert_time, error = validate_time_command(message.text.split())
     table_is_clean = True
     if status:
-        bot.send_message(message.chat.id, f'Напоминания успешно включены. Время напоминания - {alert_time}')
+        server_time = datetime.now().strftime("%H:%M")
+        bot.send_message(message.chat.id, f'Напоминания успешно включены. Время напоминания - {alert_time}.\n'
+                                          f'Время сервера: {server_time}')
         table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
         while True:
             now_time = datetime.now().strftime("%H:%M")
             weekday = datetime.now().isoweekday()
-
             if now_time == alert_time and weekday not in (6, 7):
                 bot.send_message(message.chat.id, 'Доброе утро! Не забываем про заказ еды. Хорошего дня.')
                 today = weekdays.get(datetime.now().isoweekday())
@@ -78,7 +79,8 @@ def food_ordering(message: Message):
         bot.send_message(message.chat.id, *msg)
 
     if status:
-        bot.send_message(message.chat.id, 'Заказ произведен успешно. Не забудьте произвести оплату.')
+        bot.send_message(message.chat.id, f'Заказ произведен успешно. Не забудьте произвести оплату.\n'
+                                          f'Таблица заказов: https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/')
     else:
         bot.send_message(message.chat.id, 'Возникли проблемы при заполнении таблицы.')
 
