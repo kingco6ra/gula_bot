@@ -20,7 +20,7 @@ def create_week_table(table_name: str):
                         salad TEXT not null 
                     )
             ''')
-    log.info('New table has been created. Table name:')
+    log.info(f'New table has been created. Table name: {table_name}')
 
 
 def insert_menu(menu: dict[str, [str, [list[str]]]], table_name: str):
