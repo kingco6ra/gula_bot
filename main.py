@@ -90,8 +90,8 @@ def get_help(message: Message):
     bot.send_message(message.chat.id, parse_mode='HTML', text=f'Как сделать заказ:\n'
                                                               '<pre>'
                                                               '/order Пупкин В.\n'
-                                                              'ПН: мясо, курица, рыба\n'
-                                                              'ЧТ: суп, второе, салат'
+                                                              'ПНД: мясо, курица, рыба\n'
+                                                              'ЧТВ: суп, второе, салат'
                                                               '</pre>'
                                                               'И я автоматически запишу заказ в таблицу:')
     with open('src/help.jpg', 'rb') as photo:
