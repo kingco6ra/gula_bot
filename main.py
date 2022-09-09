@@ -4,16 +4,17 @@ import os
 from datetime import datetime
 from sqlite3 import OperationalError
 from subprocess import run
-from time import sleep
 
+from aiofile import async_open
+from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message
 
-from db_conn import insert_menu, get_menu, create_week_table
+from db_conn import DataBaseConnection
 from environ_variables import TELEBOT_TOKEN, SPREADSHEET_ID
+from google_api import make_order
 from parse import parse_menu
 from validators import validate_time_command
-from google_api import make_order, clean_orders
 
 bot = AsyncTeleBot(TELEBOT_TOKEN)
 logging.basicConfig(format='%(message)s', level=logging.INFO)
@@ -36,38 +37,23 @@ async def get_starting(message: Message):
 
 
 @bot.message_handler(commands=['notify'])
-def enable_notify(message: Message):
+async def enable_notify(message: Message):
     """
     Хэндлер включения уведомлений.
     Получаем и валидируем сообщение, если все успешно - включаем бесконечный цикл,
     который напоминает про заказ еды по будням и в указанное время (если он было указано, если нет - устанавливаем стандартное время).
     В ином случае уведомляем пользователя об ошибке.
     """
-    status, alert_time, error = validate_time_command(message.text.split())
-    table_is_clean = True
+    # TODO: сделать возможность отключения уведомлений
+    status, time, error = validate_time_command(message.text.split())
     if status:
-        server_time = datetime.now().strftime("%H:%M")
-        bot.send_message(message.chat.id, f'Напоминания успешно включены. Время напоминания - {alert_time}.\n'
-                                          f'Время сервера: {server_time}')
-        table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
-        while True:
-            now_time = datetime.now().strftime("%H:%M")
-            weekday = datetime.now().isoweekday()
-            if now_time == alert_time and weekday not in (6, 7):
-                bot.send_message(message.chat.id, 'Доброе утро! Не забываем про заказ еды. Хорошего дня.')
-                today = weekdays.get(datetime.now().isoweekday())
-                try:
-                    menu = '\n'.join(get_menu(today, table_name))
-                    bot.send_message(message.chat.id, parse_mode='HTML', text=f'Вот меню на сегодня: \n <pre>{menu}</pre>')
-                except OperationalError:
-                    pass
-                table_is_clean = False
-            if weekday == 6 and not table_is_clean:
-                clean_orders()
-                bot.send_message(message.chat.id, 'Таблица заказов была успешно очищена. Хороших Выходных')
-            sleep(60)
+        db_conn = DataBaseConnection(message.chat.id)
+        status = db_conn.create_notify_table(time)
+        if not status:
+            db_conn.change_notify(time)
+        await bot.send_message(message.chat.id, f'Время напоминаний установлено на {time}')
     else:
-        bot.send_message(message.chat.id, parse_mode='HTML', text=f'Ошибка. {error}')
+        await bot.send_message(message.chat.id, error)
 
 
 @bot.message_handler(commands=['order'])
@@ -95,7 +81,7 @@ async def get_help(message: Message):
                                                                     'ЧТВ: суп, второе, салат'
                                                                     '</pre>'
                                                                     'И я автоматически запишу заказ в таблицу:')
-    async with open('src/help.jpg', 'rb') as photo:
+    with open('src/help.jpg', 'rb') as photo:
         await bot.send_photo(message.chat.id, photo)
 
 
@@ -108,21 +94,22 @@ async def get_week_menu(message: Message):
     :return:
     """
     today = weekdays.get(datetime.now().isoweekday())
-    table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
+    week_table = DataBaseConnection(message.chat.id).get_menu
     try:
         if message.text == '/menu':
-            menu = '\n'.join(get_menu(today, table_name))
-            await bot.send_message(message.chat.id, parse_mode='HTML', text=f'Меню на сегодня:\n\n'
-                                                                            f'<pre>{menu}</pre>')
+            menu = '\n'.join(week_table(today))
+            answer = f'Меню на сегодня:\n\n' \
+                     f'<pre>{menu}</pre>'
         elif message.text.split()[1].upper() in weekdays.values():
-            day = message.text.split()[1].upper()
-            menu = '\n'.join(get_menu(day, table_name))
-            await bot.send_message(message.chat.id, parse_mode='HTML', text=f'Меню на {day}:\n\n'
-                                                                            f'<pre>{menu}</pre>')
+            day = message.text.split()[1]
+            menu = '\n'.join(week_table(day))
+            answer = f'Меню на {day}:\n\n' \
+                     f'<pre>{menu}</pre>'
         else:
-            await bot.send_message(message.chat.id, parse_mode='HTML', text=f'Неправильный формат команды. Убедитесь в том, что вы правильно ввели команду:\n'
-                                                                            f'<pre>/menu $DAY - где $DAY: ПТН, ВТ, СР, ЧТВ, ПНД</pre>'
-                                                                            f'Для того чтобы получить меню на сегодня: <pre>/menu</pre>')
+            answer = f'Неправильный формат команды. Убедитесь в том, что вы правильно ввели команду:\n ' \
+                     f'<pre>/menu $DAY - где $DAY: ПТН, ВТ, СР, ЧТВ, ПНД</pre> ' \
+                     f'Для того чтобы получить меню на сегодня: <pre>/menu</pre>'
+        await bot.send_message(message.chat.id, parse_mode='HTML', text=answer)
     except OperationalError:
         await bot.send_message(message.chat.id, f'Меню для текущей недели не было загружено.')
 
@@ -135,6 +122,7 @@ async def update(message: Message):
     log.info(run(['git', 'pull']).stdout)
     log.info(run(['cp', 'gula-bot.service', '/etc/systemd/system/']))
     await bot.send_message(message.chat.id, 'Обновление выполнено успешно!')
+    log.info(run(['systemctl', 'daemon-reload']))
     log.info(run(['systemctl', 'restart', 'gula-bot']))
 
 
@@ -149,34 +137,48 @@ async def food_is_comming(message: Message):
             await bot.send_animation(message.chat.id, gif)
 
 
+async def notify(message: Message):
+    db_conn = DataBaseConnection(message.chat.id)
+    while True:
+        print(db_conn.get_notify())
+        await asyncio.sleep(5)
+
+
 @bot.message_handler(content_types=['document'])
 async def get_new_week_menu(message: Message):
     """Скачиваем и парсим XLSX чтобы получить еженедельное меню в TXT формате"""
+    week_menu = DataBaseConnection(message.chat.id)
     menu_dir = f'{os.getcwd()}/src/menus/{message.document.file_name}'
-    file = await bot.get_file(message.document.file_id)
+    file: types.File = await bot.get_file(message.document.file_id)
     document = await bot.download_file(file.file_path)
-    table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
     with open(menu_dir, 'wb') as menu:
         menu.write(document)
     try:
-        create_week_table(table_name)
+        week_menu.create_week_table()
         menu = parse_menu(menu_dir)
-        insert_menu(menu, table_name)
-        await bot.send_message(message.chat.id, 'Меню было успешно занесено в базу данных.')
+        week_menu.insert_menu(menu)
+        answer = 'Меню было успешно занесено в базу данных.'
     except OperationalError:
-        await bot.send_message(message.chat.id, 'Меню для этой недели уже загружено в базу данных.')
+        log.error('Menu for this week already written.')
+        answer = 'Меню для этой недели уже загружено в базу данных.'
+    await bot.send_message(message.chat.id, parse_mode='HTML', text=answer)
 
-
-async def notify():
-    while True:
-        print('hello')
-        await asyncio.sleep(5)
+    # костыль, нужно фиксить
+    # без перезапуска при вызове любой другой команды после загрузки меню:
+    # 2022-09-08 19:51:23,488 (asyncio_helper.py:80 MainThread) ERROR - TeleBot: "Aiohttp ClientError: ClientOSError"
+    # Aiohttp ClientError: ClientOSError
+    # 2022-09-08 19:51:23,488 (async_telebot.py:317 MainThread) ERROR - TeleBot: "Request timeout. Request: method=get url=getUpdates params=<aiohttp.formdata.FormData object at 0x7fbafb6ca290> files=None request_timeout=None"
+    # Request timeout. Request: method=get url=getUpdates params=<aiohttp.formdata.FormData object at 0x7fbafb6ca290> files=None request_timeout=None
+    # 2022-09-08 19:51:23,488 (async_telebot.py:276 MainThread) ERROR - TeleBot: "Infinity polling: polling exited"
+    # Infinity polling: polling exited
+    # 2022-09-08 19:51:23,488 (async_telebot.py:278 MainThread) ERROR - TeleBot: "Break infinity polling"
+    # Break infinity polling
+    run(['systemctl', 'restart', 'gula-bot'])
 
 
 async def main():
     tasks = [
         bot.infinity_polling(logger_level=logging.INFO),
-        notify(),
     ]
     await asyncio.gather(*tasks)
 
