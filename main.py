@@ -50,6 +50,7 @@ def enable_notify(message: Message):
                                           f'Время сервера: {server_time}')
         table_name = f'menu_{message.chat.id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
         while True:
+            log.info('await alert time ', alert_time)
             now_time = datetime.now().strftime("%H:%M")
             weekday = datetime.now().isoweekday()
             if now_time == alert_time and weekday not in (6, 7):
