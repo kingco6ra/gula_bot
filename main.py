@@ -80,8 +80,7 @@ def food_ordering(message: Message):
         bot.send_message(message.chat.id, *msg)
 
     if status:
-        bot.send_message(message.chat.id, f'Заказ произведен успешно. Не забудьте произвести оплату.\n'
-                                          f'Таблица заказов: https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/')
+        bot.send_message(message.chat.id, f'Заказ произведен успешно. Не забудьте произвести оплату.')
     else:
         bot.send_message(message.chat.id, 'Возникли проблемы при заполнении таблицы.')
 
