@@ -5,26 +5,26 @@ from datetime import datetime
 from sqlite3 import OperationalError
 from subprocess import run
 
-from aiofile import async_open
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message
 
 from db_conn import DataBaseConnection
 from environ_variables import TELEBOT_TOKEN, SPREADSHEET_ID
-from google_api import make_order
+from google_api import make_order, clean_orders
 from parse import parse_menu
 from validators import validate_time_command
 
 bot = AsyncTeleBot(TELEBOT_TOKEN)
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 log = logging.getLogger(__name__)
-weekdays = {
-    1: 'ПНД',
-    2: 'ВТ',
-    3: 'СР',
-    4: 'ЧТВ',
-    5: 'ПТН'
+
+WEEKDAYS = {
+    1: "ПНД",
+    2: "ВТ",
+    3: "СР",
+    4: "ЧТВ",
+    5: "ПТН"
 }
 
 
@@ -47,10 +47,12 @@ async def enable_notify(message: Message):
     # TODO: сделать возможность отключения уведомлений
     status, time, error = validate_time_command(message.text.split())
     if status:
-        db_conn = DataBaseConnection(message.chat.id)
-        status = db_conn.create_notify_table(time)
-        if not status:
-            db_conn.change_notify(time)
+        db_conn = DataBaseConnection()
+        try:
+            db_conn.insert_notify_table(time, message.chat.id)
+        except Exception:
+            log.error('Updating existing values.')
+            db_conn.update_notify(time, message.chat.id)
         await bot.send_message(message.chat.id, f'Время напоминаний установлено на {time}')
     else:
         await bot.send_message(message.chat.id, error)
@@ -66,8 +68,8 @@ async def food_ordering(message: Message):
         await bot.send_message(message.chat.id, *msg)
 
     if status:
-        await bot.send_message(message.chat.id, f'Заказ произведен успешно. Не забудьте произвести оплату.\n'
-                                                f'Таблица заказов: https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/')
+        await bot.send_message(message.chat.id, f'Заказ произведен успешно. Не забудьте произвести оплату.')
+        DataBaseConnection().need_clean_table(message.chat.id, True)
     else:
         await bot.send_message(message.chat.id, 'Возникли проблемы при заполнении таблицы.')
 
@@ -93,16 +95,16 @@ async def get_week_menu(message: Message):
     :param message:
     :return:
     """
-    today = weekdays.get(datetime.now().isoweekday())
-    week_table = DataBaseConnection(message.chat.id).get_menu
+    today = WEEKDAYS.get(datetime.now().isoweekday())
+    week_table = DataBaseConnection().get_menu
     try:
         if message.text == '/menu':
-            menu = '\n'.join(week_table(today))
+            menu = '\n'.join(week_table(today, message.chat.id))
             answer = f'Меню на сегодня:\n\n' \
                      f'<pre>{menu}</pre>'
-        elif message.text.split()[1].upper() in weekdays.values():
+        elif message.text.split()[1].upper() in WEEKDAYS.values():
             day = message.text.split()[1]
-            menu = '\n'.join(week_table(day))
+            menu = '\n'.join(week_table(day, message.chat.id))
             answer = f'Меню на {day}:\n\n' \
                      f'<pre>{menu}</pre>'
         else:
@@ -112,6 +114,8 @@ async def get_week_menu(message: Message):
         await bot.send_message(message.chat.id, parse_mode='HTML', text=answer)
     except OperationalError:
         await bot.send_message(message.chat.id, f'Меню для текущей недели не было загружено.')
+    except TypeError:
+        await bot.send_message(message.chat.id, f'К сожалению на выходных ничего не доставляют.')
 
 
 @bot.message_handler(commands=['update'])
@@ -134,29 +138,23 @@ async def food_is_comming(message: Message):
     if set(lower_message).intersection(hook_words):
         with open('src/eating.gif', 'rb') as gif:
             await bot.send_message(message.chat.id, 'Приятного аппетита.')
-            await bot.send_animation(message.chat.id, gif)
-
-
-async def notify(message: Message):
-    db_conn = DataBaseConnection(message.chat.id)
-    while True:
-        print(db_conn.get_notify())
-        await asyncio.sleep(5)
+            # TODO: разные гифки, пока отключаем ибо раздражает одно и тоже
+            # await bot.send_animation(message.chat.id, gif)
 
 
 @bot.message_handler(content_types=['document'])
 async def get_new_week_menu(message: Message):
     """Скачиваем и парсим XLSX чтобы получить еженедельное меню в TXT формате"""
-    week_menu = DataBaseConnection(message.chat.id)
+    week_menu = DataBaseConnection()
     menu_dir = f'{os.getcwd()}/src/menus/{message.document.file_name}'
     file: types.File = await bot.get_file(message.document.file_id)
     document = await bot.download_file(file.file_path)
     with open(menu_dir, 'wb') as menu:
         menu.write(document)
     try:
-        week_menu.create_week_table()
+        week_menu.create_week_table(message.chat.id)
         menu = parse_menu(menu_dir)
-        week_menu.insert_menu(menu)
+        week_menu.insert_menu(menu, message.chat.id)
         answer = 'Меню было успешно занесено в базу данных.'
     except OperationalError:
         log.error('Menu for this week already written.')
@@ -176,9 +174,41 @@ async def get_new_week_menu(message: Message):
     run(['systemctl', 'restart', 'gula-bot'])
 
 
+async def notify_syncer():
+    log.info('Notify syncer has been started.')
+    while True:
+        notifications = DataBaseConnection().get_notifications()
+        now_time = datetime.now().strftime("%H:%M")
+        weekday = datetime.now().isoweekday()
+
+        if not notifications:
+            await asyncio.sleep(5)
+
+        for notify in notifications:
+            if now_time.endswith('00'):
+                log.info('Syncer continues its work. Notify time: %s', notify['time'])
+            if not notify['enabled']:
+                continue
+            if weekday in (6, 7):
+                if notify['need_clean']:
+                    clean_orders()
+                    log.info('Orders has been cleaned.')
+                    DataBaseConnection().need_clean_table(notify['chat_id'], False)
+                    await bot.send_message(notify['chat_id'], 'Таблица заказов успешно очищена. Хороших выходных.')
+                continue
+            if now_time == notify['time']:
+                chat_id = notify['chat_id']
+                menu = '\n'.join(DataBaseConnection().get_menu(WEEKDAYS.get(weekday), chat_id))
+                await bot.send_message(chat_id, 'Доброе утро! Не забываем про заказ еды. Хорошего дня.')
+                await bot.send_message(chat_id, parse_mode='HTML', text=f'Меню на сегодня:\n\n'
+                                                                        f'<pre>{menu}</pre>')
+        await asyncio.sleep(5)
+
+
 async def main():
     tasks = [
         bot.infinity_polling(logger_level=logging.INFO),
+        notify_syncer()
     ]
     await asyncio.gather(*tasks)
 
