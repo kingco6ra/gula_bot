@@ -182,7 +182,7 @@ async def notify_syncer():
         weekday = datetime.now().isoweekday()
 
         if not notifications:
-            await asyncio.sleep(5)
+            await asyncio.sleep(60)
 
         for notify in notifications:
             if now_time.endswith('00'):
@@ -202,7 +202,7 @@ async def notify_syncer():
                 await bot.send_message(chat_id, 'Доброе утро! Не забываем про заказ еды. Хорошего дня.')
                 await bot.send_message(chat_id, parse_mode='HTML', text=f'Меню на сегодня:\n\n'
                                                                         f'<pre>{menu}</pre>')
-        await asyncio.sleep(5)
+        await asyncio.sleep(60)
 
 
 async def main():
