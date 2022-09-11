@@ -91,7 +91,7 @@ class MenuTableConnection:
             cursor = db_conn.cursor()
             cursor.execute(
                 f'''
-                    create table "{self.__table_name }"
+                    create table "{self.__table_name}"
                         (
                             weekday TEXT not null,
                             soup    TEXT not null,
@@ -100,7 +100,7 @@ class MenuTableConnection:
                             salad TEXT not null 
                         )
                 ''')
-        log.info(f'New table has been created. Table name: {self.__table_name }')
+        log.info(f'New table has been created. Table name: {self.__table_name}')
 
     def insert_menu(self, menu: dict[str, [str, [list[str]]]]):
         log.info('Writing new menu in table.')
@@ -113,7 +113,7 @@ class MenuTableConnection:
                 cursor = db_conn.cursor()
                 cursor.execute(
                     f'''
-                INSERT INTO {self.__table_name } VALUES(
+                INSERT INTO {self.__table_name} VALUES(
                 '{weekday}', '{soup}', '{second_course}', '{garnish}', '{salad}'
                 )
                 ''')
@@ -124,7 +124,7 @@ class MenuTableConnection:
             cursor = db_conn.cursor()
             cursor.execute(
                 f'''
-                SELECT * FROM {self.__table_name }
+                SELECT * FROM {self.__table_name}
                 WHERE weekday = '{weekday}'
                 '''
             )

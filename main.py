@@ -109,7 +109,7 @@ async def get_week_menu(message: Message):
                      f'<pre>{menu}</pre>'
         else:
             answer = f'Неправильный формат команды. Убедитесь в том, что вы правильно ввели команду:\n ' \
-                     f'<pre>/menu $DAY - где $DAY: ПТН, ВТ, СР, ЧТВ, ПНД</pre> ' \
+                     f'<pre>/menu $DAY - где $DAY: ПНД, ВТ, СР, ЧТВ, ПТН</pre> ' \
                      f'Для того чтобы получить меню на сегодня: <pre>/menu</pre>'
         await bot.send_message(message.chat.id, parse_mode='HTML', text=answer)
     except OperationalError:
