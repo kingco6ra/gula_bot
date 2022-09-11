@@ -2,23 +2,23 @@ import logging
 import sqlite3
 from datetime import datetime
 from sqlite3 import OperationalError
+from typing import Any
 
 log = logging.getLogger(__name__)
+db_conn = sqlite3.connect('database.db', check_same_thread=False)
 
 
-class DataBaseConnection:
+class NotifyTableConnection:
     def __init__(self):
         self.__notify_table = f'notify_table'
-        self.connect = sqlite3.connect('database.db', check_same_thread=False)
 
     def create_notify_table(self) -> bool:
         """
-
         :return: True - таблица уже существует, False - таблицы не существует и она была создана
         """
         log.info('Creating notify table.')
-        with self.connect:
-            cursor = self.connect.cursor()
+        with db_conn:
+            cursor = db_conn.cursor()
             try:
                 cursor.execute(f'''
                 create table "{self.__notify_table}"
@@ -38,8 +38,8 @@ class DataBaseConnection:
 
     def insert_notify_table(self, time: str, chat_id: int):
         log.info('Start insert values.')
-        with self.connect:
-            cursor = self.connect.cursor()
+        with db_conn:
+            cursor = db_conn.cursor()
             cursor.execute(f'''
             INSERT INTO {self.__notify_table} VALUES(
             {chat_id}, TRUE, '{time}', FALSE
@@ -50,8 +50,8 @@ class DataBaseConnection:
 
     def update_notify(self, time: str, chat_id: int):
         log.info('Starting update notify time.')
-        with self.connect:
-            cursor = self.connect.cursor()
+        with db_conn:
+            cursor = db_conn.cursor()
             cursor.execute(f'''
             UPDATE {self.__notify_table}
             SET enabled = TRUE, time = '{time}'
@@ -61,17 +61,17 @@ class DataBaseConnection:
 
     def need_clean_table(self, chat_id: int, status: bool):
         log.info('Update "need clean" status on %s', status)
-        with self.connect:
-            cursor = self.connect.cursor()
+        with db_conn:
+            cursor = db_conn.cursor()
             cursor.execute(f'''
             UPDATE {self.__notify_table}
             SET need_clean = {status}
             WHERE chat_id = {chat_id}
             ''')
 
-    def get_notifications(self):  # -> dict[str[bool], str[str]]:
-        with self.connect:
-            cursor = self.connect.cursor()
+    def get_notifications(self) -> list[dict[str, Any]]:
+        with db_conn:
+            cursor = db_conn.cursor()
             try:
                 cursor.execute(f'SELECT chat_id, enabled, time, need_clean FROM {self.__notify_table}')
             except OperationalError:
@@ -80,14 +80,18 @@ class DataBaseConnection:
             columns = ('chat_id', 'enabled', 'time', 'need_clean')
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
-    def create_week_table(self, chat_id: int):
-        menu_table = f'menu_{chat_id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
+
+class MenuTableConnection:
+    def __init__(self, chat_id: int):
+        self.__table_name = f'menu_{chat_id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
+
+    def create_week_table(self):
         log.info('Creating new week table.')
-        with self.connect:
-            cursor = self.connect.cursor()
+        with db_conn:
+            cursor = db_conn.cursor()
             cursor.execute(
                 f'''
-                    create table "{menu_table}"
+                    create table "{self.__table_name }"
                         (
                             weekday TEXT not null,
                             soup    TEXT not null,
@@ -96,33 +100,31 @@ class DataBaseConnection:
                             salad TEXT not null 
                         )
                 ''')
-        log.info(f'New table has been created. Table name: {menu_table}')
+        log.info(f'New table has been created. Table name: {self.__table_name }')
 
-    def insert_menu(self, menu: dict[str, [str, [list[str]]]], chat_id: int):
+    def insert_menu(self, menu: dict[str, [str, [list[str]]]]):
         log.info('Writing new menu in table.')
-        menu_table = f'menu_{chat_id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
         for weekday, food in menu.items():
             soup = '\n'.join(food['soup'])
             second_course = '\n'.join(food['second_course'])
             garnish = '\n'.join(food['garnish'])
             salad = '\n'.join(food['salad'])
-            with self.connect:
-                cursor = self.connect.cursor()
+            with db_conn:
+                cursor = db_conn.cursor()
                 cursor.execute(
                     f'''
-                INSERT INTO {menu_table} VALUES(
+                INSERT INTO {self.__table_name } VALUES(
                 '{weekday}', '{soup}', '{second_course}', '{garnish}', '{salad}'
                 )
                 ''')
         log.info('New menu has been writed.')
 
-    def get_menu(self, weekday: str, chat_id: int) -> list[str] | bool:
-        menu_table = f'menu_{chat_id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
-        with self.connect:
-            cursor = self.connect.cursor()
+    def get_menu(self, weekday: str) -> list[str] | bool:
+        with db_conn:
+            cursor = db_conn.cursor()
             cursor.execute(
                 f'''
-                SELECT * FROM {menu_table}
+                SELECT * FROM {self.__table_name }
                 WHERE weekday = '{weekday}'
                 '''
             )
