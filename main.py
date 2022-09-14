@@ -217,7 +217,7 @@ async def notify_syncer():
 
 async def main():
     tasks = [
-        bot.infinity_polling(logger_level=logging.INFO),
+        bot.infinity_polling(),
         notify_syncer()
     ]
     await asyncio.gather(*tasks)
