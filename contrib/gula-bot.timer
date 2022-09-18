@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily bot restart
+After=gula-bot.service
+PartOf=gula-bot.service
+
+[Timer]
+OnCalendar=*-*-* 07:00:00
+
+[Install]
+RequiredBy=gula-bot.service

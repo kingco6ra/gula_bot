@@ -124,9 +124,10 @@ async def update(message: Message):
     log.info(run(['git', 'restore', '.']))
     log.info(run(['git', 'fetch']))
     log.info(run(['git', 'pull']).stdout)
-    log.info(run(['cp', 'gula-bot.service', '/etc/systemd/system/']))
-    await bot.send_message(message.chat.id, 'Обновление выполнено успешно!')
+    log.info(run(['cp', 'contrib/gula-bot.service', '/etc/systemd/system/']))
+    log.info(run(['cp', 'contrib/gula-bot.timer', '/etc/systemd/system/']))
     log.info(run(['systemctl', 'daemon-reload']))
+    await bot.send_message(message.chat.id, 'Обновление выполнено успешно!')
     log.info(run(['systemctl', 'restart', 'gula-bot']))
 
 
@@ -144,7 +145,7 @@ async def food_is_comming(message: Message):
 
 @bot.message_handler(content_types=['document'])
 async def get_new_week_menu(message: Message):
-    """Скачиваем и парсим XLSX чтобы получить еженедельное меню в TXT формате"""
+    """Скачиваем и парсим XLSX, чтобы получить еженедельное меню в TXT формате"""
     week_menu = MenuTableConnection(message.chat.id)
     menu_dir = f'{os.getcwd()}/src/menus/{message.document.file_name}'
     file: types.File = await bot.get_file(message.document.file_id)
