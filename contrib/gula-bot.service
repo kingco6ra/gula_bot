@@ -8,9 +8,8 @@ Type=simple
 User=root
 WorkingDirectory=/usr/share/gula_bot
 ExecStart=/usr/bin/python3 /usr/share/gula_bot/main.py
-ExecReload=/usr/bin/python3 /usr/share/gula_bot/main.py
-RestartSec=10
 Restart=always
+RuntimeMaxSec=1h
 
 [Install]
 WantedBy=multi-user.target

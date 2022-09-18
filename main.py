@@ -125,8 +125,6 @@ async def update(message: Message):
     log.info(run(['git', 'fetch']))
     log.info(run(['git', 'pull']).stdout)
     log.info(run(['cp', 'contrib/gula-bot.service', '/etc/systemd/system/']))
-    log.info(run(['cp', 'contrib/gula-bot-restart.service', '/etc/systemd/system/']))
-    log.info(run(['cp', 'contrib/gula-bot-restart.timer', '/etc/systemd/system/']))
     log.info(run(['systemctl', 'daemon-reload']))
     await bot.send_message(message.chat.id, 'Обновление выполнено успешно!')
     log.info(run(['systemctl', 'restart', 'gula-bot']))
