@@ -17,7 +17,7 @@ def get_rows(ranges):
                                      range=ranges).execute()
 
 
-def get_weekday(weekday: str | None) -> str:
+def get_weekday(weekday: str | None = None) -> str:
     if weekday:
         return {
             'ПНД': 'B',

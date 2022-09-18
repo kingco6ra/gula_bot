@@ -7,11 +7,12 @@ from subprocess import run
 
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import Message
+from telebot.types import CallbackQuery, InlineKeyboardMarkup, Message
 
-from db_conn import NotifyTableConnection, MenuTableConnection
-from environ_variables import TELEBOT_TOKEN, SPREADSHEET_ID
-from google_api import make_order, clean_orders
+from db_conn import MenuTableConnection, NotifyTableConnection
+from environ_variables import SPREADSHEET_ID, TELEBOT_TOKEN
+from google_api import clean_orders, make_order
+from order_with_buttons import Order
 from parse import parse_menu
 from validators import validate_time_command
 
@@ -26,6 +27,60 @@ WEEKDAYS = {
     4: "ЧТВ",
     5: "ПТН"
 }
+TODAY = WEEKDAYS.get(datetime.now().isoweekday())
+
+
+@bot.message_handler(commands=['button'])
+async def button(message: Message):
+    try:
+        menu = MenuTableConnection(message.chat.id).generate_order_menu(TODAY)
+
+        markup = InlineKeyboardMarkup()
+        for dish in menu['first']:
+            markup.add(
+                dish
+            )
+        answer = 'Вот меню на сегодня:'
+    except TypeError:
+        answer = 'На выходных мы ничего не заказываем :('
+        markup = None
+
+    await bot.send_message(message.chat.id, text=answer, reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: True)
+async def callback_menu(call: CallbackQuery):
+    user_id = call.from_user.id
+    chat_id = call.message.chat.id
+    menu_conn = MenuTableConnection(chat_id)
+
+    markup = InlineKeyboardMarkup()
+    inline_buttons = MenuTableConnection(chat_id).generate_order_menu(TODAY)
+    data, menu_index, dish_index = call.data.split('_')
+
+    menu = menu_conn.get_menu(TODAY)
+    menu_conn.create_and_insert_to_order_table(user_id=user_id)
+    menu_conn.update_order_table(user_id, data, menu[int(menu_index)].split('\n')[int(dish_index)])
+
+    if data == 'first':
+        inline_buttons = inline_buttons['second']
+    if data == 'second':
+        inline_buttons = inline_buttons['garnier']
+    if data == 'garnier':
+        inline_buttons = inline_buttons['salad']
+    if data == 'salad':
+        inline_buttons = inline_buttons['salad']
+
+    for item in inline_buttons:
+        markup.add(item)
+    try:
+        await bot.edit_message_reply_markup(chat_id=chat_id, message_id=call.message.message_id, reply_markup=markup)
+    except Exception:
+        full_name = call.from_user.full_name
+        order, msg = Order(user_id=user_id, chat_id=chat_id, full_name=full_name).make_order()
+        answer = f'Заказ на имя <b>{full_name}</b> произведен успешно.\nВаш заказ:\n\n<pre>{order}</pre>\n' + f'{msg}'
+        await bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, parse_mode='HTML',
+                                    text=answer)
 
 
 @bot.message_handler(commands=['start'])
@@ -58,6 +113,7 @@ async def enable_notify(message: Message):
         await bot.send_message(message.chat.id, error)
 
 
+# TODO: удалить
 @bot.message_handler(commands=['order'])
 async def food_ordering(message: Message):
     full_string = message.text.split()
@@ -95,11 +151,10 @@ async def get_week_menu(message: Message):
     :param message:
     :return:
     """
-    today = WEEKDAYS.get(datetime.now().isoweekday())
     week_table = MenuTableConnection(message.chat.id).get_menu
     try:
         if message.text == '/menu':
-            menu = '\n'.join(week_table(today))
+            menu = '\n'.join(week_table(TODAY))
             answer = f'Меню на сегодня:\n\n' \
                      f'<pre>{menu}</pre>'
         elif message.text.split()[1].upper() in WEEKDAYS.values():
