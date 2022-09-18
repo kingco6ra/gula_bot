@@ -1,5 +1,5 @@
 [Unit]
-Description=Squid caching proxy restart command
+Description=Daily bot restart
 
 [Service]
 Type=oneshot
