@@ -1,0 +1,6 @@
+[Unit]
+Description=Squid caching proxy restart command
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl restart --no-block gula-bot.service
