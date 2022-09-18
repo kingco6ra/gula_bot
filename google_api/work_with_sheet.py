@@ -17,7 +17,7 @@ def get_rows(ranges):
                                      range=ranges).execute()
 
 
-def get_weekday(weekday: str | None):
+def get_weekday(weekday: str | None) -> str:
     if weekday:
         return {
             'ПНД': 'B',
@@ -36,11 +36,10 @@ def get_weekday(weekday: str | None):
     }.get(datetime.now().isoweekday())
 
 
-def write_in_table(body):
+def write_in_table(body) -> None:
     log.info('writing in table')
     spreadsheets.values().batchUpdate(spreadsheetId=SPREADSHEET_ID, body=body).execute()
     log.info('writing complete')
-    return
 
 
 def make_order(name: str, order: list) -> tuple[bool, list[str]]:
@@ -149,7 +148,7 @@ def clean_orders() -> None:
     spreadsheets.batchUpdate(spreadsheetId=SPREADSHEET_ID, body=body).execute()
 
 
-def everyone_paid():
+def everyone_paid() -> None:
     # TODO: красить только заполненные клетки
     weekday = datetime.now().isoweekday()
     body = {
@@ -183,4 +182,3 @@ def everyone_paid():
 
     }
     spreadsheets.batchUpdate(spreadsheetId=SPREADSHEET_ID, body=body).execute()
-

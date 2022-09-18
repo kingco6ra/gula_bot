@@ -162,18 +162,6 @@ async def get_new_week_menu(message: Message):
         answer = 'Меню для этой недели уже загружено в базу данных.'
     await bot.send_message(message.chat.id, parse_mode='HTML', text=answer)
 
-    # костыль, нужно фиксить
-    # без перезапуска при вызове любой другой команды после загрузки меню:
-    # 2022-09-08 19:51:23,488 (asyncio_helper.py:80 MainThread) ERROR - TeleBot: "Aiohttp ClientError: ClientOSError"
-    # Aiohttp ClientError: ClientOSError
-    # 2022-09-08 19:51:23,488 (async_telebot.py:317 MainThread) ERROR - TeleBot: "Request timeout. Request: method=get url=getUpdates params=<aiohttp.formdata.FormData object at 0x7fbafb6ca290> files=None request_timeout=None"
-    # Request timeout. Request: method=get url=getUpdates params=<aiohttp.formdata.FormData object at 0x7fbafb6ca290> files=None request_timeout=None
-    # 2022-09-08 19:51:23,488 (async_telebot.py:276 MainThread) ERROR - TeleBot: "Infinity polling: polling exited"
-    # Infinity polling: polling exited
-    # 2022-09-08 19:51:23,488 (async_telebot.py:278 MainThread) ERROR - TeleBot: "Break infinity polling"
-    # Break infinity polling
-    run(['systemctl', 'restart', 'gula-bot'])
-
 
 async def notify_syncer():
     log.info('Notify syncer has been started.')
@@ -217,7 +205,7 @@ async def notify_syncer():
 
 async def main():
     tasks = [
-        bot.infinity_polling(),
+        bot.polling(non_stop=True),
         notify_syncer()
     ]
     await asyncio.gather(*tasks)
