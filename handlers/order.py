@@ -5,6 +5,7 @@
     /menu - получение меню.
 """
 from datetime import datetime
+from sqlite3 import OperationalError
 
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_helper import ApiTelegramException
@@ -41,6 +42,9 @@ class OrderHandler:
             answer = 'Вот меню на сегодня:'
         except TypeError:
             answer = 'На выходных мы ничего не заказываем :('
+            markup = None
+        except OperationalError:
+            answer = 'Нет данных по таблице.'
             markup = None
 
         await self.__bot.send_message(message.chat.id, text=answer, reply_markup=markup)
