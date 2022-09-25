@@ -8,6 +8,7 @@ from handlers.get_starting import GetStartingHandler
 from handlers.menu import MenuHandler
 from handlers.notify import NotifyHandler
 from handlers.order import OrderHandler
+from handlers.update import UpdateHandler
 from notify_syncer import NotifySyncer
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
@@ -18,6 +19,7 @@ HANDLERS = [
     MenuHandler,
     OrderHandler,
     NotifyHandler,
+    UpdateHandler,
 ]
 
 
