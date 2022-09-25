@@ -19,31 +19,29 @@ WEEKDAYS = {
 class NotifySyncer:
     def __init__(self, bot: AsyncTeleBot):
         self.__bot = bot
-        self.__wekday = WEEKDAYS.get(datetime.now().isoweekday())
+        self.__weekday = datetime.now().isoweekday()
         self.__menu = MenuTableConnection
         self.__notify_conn = NotifyTableConnection()
 
     async def notify_syncer(self):
-        log.info('Notify syncer has been started.')
         now_time = datetime.now().strftime("%H:%M")
+        notifications = self.__notify_conn.get_notifications()
 
-        if not self.__notify_conn.get_notifications():
-            await asyncio.sleep(60)
-
-        for notify in self.__notify_conn.get_notifications():
-            log.debug('Syncer continues its work')
+        for notify in notifications:
             if not notify['enabled']:
                 continue
-            if self.__wekday in (6, 7):
+
+            if self.__weekday in (6, 7):
                 if notify['need_clean'] and now_time == notify['time']:
                     GoogleSheets().clean_orders()
                     log.info('Orders has been cleaned.')
                     self.__notify_conn.need_clean_table(notify['chat_id'], False)
                     await self.__bot.send_message(notify['chat_id'], 'Таблица заказов успешно очищена. Хороших выходных.')
                 continue
+
             if now_time == notify['time']:
                 chat_id = notify['chat_id']
-                menu = self.__menu(chat_id).get_menu(self.__wekday)
+                menu = self.__menu(chat_id).get_menu(WEEKDAYS.get(self.__weekday))
                 try:
                     menu = '\n'.join(menu)
                 except OperationalError:

@@ -62,3 +62,23 @@ class MenuTableConnection:
             log.error('Nothing will be delivered on the weekend.')
             return False
         return menu
+
+    def get_all_menu(self) -> dict[str, dict[int, str]]:
+        with db_conn:
+            cursor = db_conn.cursor()
+            cursor.execute(
+                f'''
+                SELECT * FROM {self.__table_name}
+                '''
+            )
+        menu: dict[str, dict[int, str]] = {}
+        for weekday_food in cursor.fetchall():
+            day, first, second, garnier, salad = weekday_food
+            menu[day] = {
+                1: first,
+                2: second,
+                3: garnier,
+                4: salad
+            }
+
+        return menu

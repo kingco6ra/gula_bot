@@ -11,6 +11,7 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot.types import File, Message
 
 from database import MenuTableConnection
+from google_api import GoogleSheets
 from parse import parse_menu
 
 WEEKDAYS = {
@@ -23,7 +24,7 @@ WEEKDAYS = {
 TODAY = WEEKDAYS.get(datetime.now().isoweekday())
 
 
-class NewWeekMenuHandler:
+class MenuHandler:
     def __init__(self, bot: AsyncTeleBot):
         self.__bot = bot
         self.__register_handlers()
@@ -40,11 +41,12 @@ class NewWeekMenuHandler:
             menu_conn.create()
             menu = parse_menu(menu_dir)
             menu_conn.insert_menu(menu)
-
             answer = 'Меню было успешно занесено в базу данных.'
+            GoogleSheets().write_menu(menu_conn.get_all_menu())
         except OperationalError:
             log.error('Menu for this week already written.')
             answer = 'Меню для этой недели уже загружено в базу данных.'
+
         await self.__bot.send_message(message.chat.id, parse_mode='HTML', text=answer)
 
     async def menu(self, message: Message):

@@ -14,7 +14,7 @@ class GoogleSheets:
     def __init__(self):
         self.__spreadsheet_id = SPREADSHEET_ID
         self.__column_ranges = 'A1:A50'
-        self.__sheet_values = self.get_rows()['values']
+        self.__sheet_values = self.get_rows()
 
     def write(self, body) -> None:
         log.info('writing in table')
@@ -23,8 +23,29 @@ class GoogleSheets:
 
     def get_rows(self):
         log.info(f'GET rows from {self.__column_ranges} range.')
-        return spreadsheets.values().get(spreadsheetId=self.__spreadsheet_id,
-                                         range=self.__column_ranges).execute()
+        try:
+            return spreadsheets.values().get(spreadsheetId=self.__spreadsheet_id,
+                                             range=self.__column_ranges).execute()['values']
+        except KeyError:
+            log.error('Google sheet is empty.')
+            return [[]]
+
+    def write_menu(self, menu: dict[str, dict[int, str]]):
+        """Записывает недельное меню на второй лист"""
+        for day, food in menu.items():
+            day = get_weekday(day)
+            for row_id, food in food.items():
+                body = {
+                    "valueInputOption": "USER_ENTERED",
+                    "data": [
+                        {
+                            "range": f"menu!{day}{row_id}",
+                            "majorDimension": "ROWS",
+                            "values": [[food]],
+                        }
+                    ]
+                }
+                self.write(body)
 
     def clean_orders(self) -> None:
         self.write(body={
@@ -34,7 +55,7 @@ class GoogleSheets:
                     "range": f"{FULL_WEEK}",
                     'majorDimension': 'ROWS',
                     "values": [
-                        ['' for _ in range(5)] for _ in range(len(self.get_rows()['values']))
+                        ['' for _ in range(5)] for _ in range(len(self.get_rows()))
                     ],
                 }
             ]
@@ -83,7 +104,7 @@ class GoogleSheets:
                         "range": {
                             "sheetId": 0,
                             "startRowIndex": 1,
-                            "endRowIndex": len(self.get_rows()['values']),
+                            "endRowIndex": len(self.get_rows()),
                             "startColumnIndex": weekday,
                             "endColumnIndex": weekday + 1
                         },
@@ -98,7 +119,7 @@ class GoogleSheets:
                                         }
                                     }
                                 ]
-                            }] for _ in range(len(self.get_rows()['values']) - 1)
+                            }] for _ in range(len(self.get_rows()) - 1)
                         ],
                         "fields": "userEnteredFormat.backgroundColor"
                     }

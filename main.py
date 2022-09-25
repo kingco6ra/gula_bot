@@ -5,20 +5,20 @@ from telebot.async_telebot import AsyncTeleBot
 
 from environ_variables import TELEBOT_TOKEN
 from handlers.get_starting import GetStartingHandler
-from handlers.menu import NewWeekMenuHandler
+from handlers.menu import MenuHandler
 from handlers.notify import NotifyHandler
 from handlers.order import OrderHandler
 from notify_syncer import NotifySyncer
 
-HANDLERS = [
-    GetStartingHandler,
-    OrderHandler,
-    NotifyHandler,
-    NewWeekMenuHandler,
-]
-
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 log = logging.getLogger(__name__)
+
+HANDLERS = [
+    GetStartingHandler,
+    MenuHandler,
+    OrderHandler,
+    NotifyHandler,
+]
 
 
 async def main():
