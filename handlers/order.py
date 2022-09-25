@@ -39,7 +39,8 @@ class OrderHandler:
                 markup.add(
                     dish
                 )
-            answer = 'Вот меню на сегодня:'
+            answer = f'`Пожалуйста, не нажимайте на это меню, если его вызвали не вы.` \n\n' \
+                     f'*Вот меню на сегодня:*'
         except TypeError:
             answer = 'На выходных мы ничего не заказываем :('
             markup = None
@@ -47,7 +48,7 @@ class OrderHandler:
             answer = 'Нет данных по таблице.'
             markup = None
 
-        await self.__bot.send_message(message.chat.id, text=answer, reply_markup=markup)
+        await self.__bot.send_message(message.chat.id, parse_mode='Markdown', text=answer, reply_markup=markup)
 
     async def callback_menu(self, call: CallbackQuery):
         user_id = call.from_user.id
