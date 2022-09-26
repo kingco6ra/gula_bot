@@ -88,7 +88,7 @@ class OrderHandler:
 
     async def order(self, message: Message):
         full_string = message.text.split()
-        full_name = f'{full_string[1]} {full_string[2]}'
+        full_name = f'{full_string[1].capitalize()} {full_string[2].capitalize()}'
 
         status, msg = GoogleSheets().make_order(full_name, message.text.split('\n')[1:])
         if msg:
