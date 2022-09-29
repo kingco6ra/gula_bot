@@ -19,19 +19,22 @@ class ButtonOrder:
         self.__google_sheets = GoogleSheets()
         self.__sheet_values: list[list[str]] = self.__google_sheets.get_rows()
 
-    def get_row_id(self) -> tuple[int, str]:
+    def get_row_id(self) -> tuple[int, str, str]:
         """Получаем номер строки пользователя из таблицы. Если такого не существует - добавляем в самый конец."""
         try:
             row_id = None
+            username = None
+
             for value in self.__sheet_values:
                 for name in value:
                     if str(self.__user_id) in name or self.__full_name in name:
                         row_id = self.__sheet_values.index([name]) + 1
+                        username = name.split('\n')[0]
                         break
 
             assert row_id is not None
             log.info('User already exists.')
-            return row_id, ''
+            return row_id, '', username
 
         except AssertionError:
             # Получаем ID первой свободной строки и добавляем туда новое имя.
@@ -50,12 +53,12 @@ class ButtonOrder:
             self.__google_sheets.write(body)
             log.info('New user was been created.')
             return last_row_id, f'Был создан новый пользователь:\n' \
-                                f'<pre>{self.__name}</pre>'
+                                f'<pre>{self.__name}</pre>', self.__name.split('\n')[0]
 
-    def make_order(self):
+    def make_order(self) -> tuple[str, str, str]:
         log.info('Start writing order in table')
         order = OrderTableConnection(self.__chat_id).get_all(self.__user_id)
-        row_id, msg = self.get_row_id()
+        row_id, msg, username = self.get_row_id()
         day = get_weekday()
         order = ''.join(order)
         body = {
@@ -71,4 +74,4 @@ class ButtonOrder:
         self.__google_sheets.write(body)
         log.info(f'Order has been created for %s has been created.', self.__name)
         NotifyTableConnection().need_clean_table(self.__chat_id, True)
-        return order, msg
+        return order, msg, username

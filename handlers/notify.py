@@ -43,8 +43,7 @@ class NotifyHandler:
         hook_words = {'поднимается', 'приехал', 'приехала', 'примите', 'привезли'}
         lower_message = set(map(lambda x: x.lower(), message.text.split(' ')))
         if set(lower_message).intersection(hook_words):
-            with open('src/eating.gif', 'rb') as gif:
-                await self.__bot.send_message(message.chat.id, 'Приятного аппетита.')
+            await self.__bot.send_message(message.chat.id, 'Приятного аппетита.')
 
     def __register_handlers(self):
         self.__bot.register_message_handler(self._enable_notify, commands=['notify'])

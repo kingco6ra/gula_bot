@@ -133,9 +133,16 @@ class GoogleSheets:
         log.info('Start ordering.')
         msg = []
         try:
-            row_id = self.__sheet_values.index([name]) + 1
+            name_in_table = None
+            for values in self.__sheet_values:
+                for value in values:
+                    if name in value:
+                        name_in_table = value
+
+            assert name_in_table is not None
+            row_id = self.__sheet_values.index([name_in_table]) + 1
             log.info('User already exists.')
-        except ValueError:
+        except AssertionError:
             log.info('User not exists. Creating.')
             row_id = len(self.__sheet_values) + 1
             body = {

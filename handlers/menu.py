@@ -31,6 +31,7 @@ class MenuHandler:
 
     async def get_new_week_menu(self, message: Message):
         """Скачиваем и парсим XLSX, чтобы получить еженедельное меню в TXT формате"""
+        start_message = await self.__bot.send_message(message.chat.id, text='⏳ Заношу меню в базу данных и в таблицу.\nЭто может занять несколько секунд.')
         menu_conn = MenuTableConnection(message.chat.id)
         menu_dir = f'{os.getcwd()}/src/menus/{message.document.file_name}'
         file: File = await self.__bot.get_file(message.document.file_id)
@@ -41,13 +42,13 @@ class MenuHandler:
             menu_conn.create()
             menu = parse_menu(menu_dir)
             menu_conn.insert_menu(menu)
-            answer = 'Меню было успешно занесено в базу данных.'
+            answer = '✅ Меню было успешно занесено в базу данных.'
             GoogleSheets().write_menu(menu_conn.get_all_menu())
         except OperationalError:
             log.error('Menu for this week already written.')
-            answer = 'Меню для этой недели уже загружено в базу данных.'
+            answer = ' ❌ Меню для этой недели уже загружено в базу данных.'
 
-        await self.__bot.send_message(message.chat.id, parse_mode='HTML', text=answer)
+        await self.__bot.edit_message_text(text=answer, chat_id=message.chat.id, message_id=start_message.message_id, parse_mode='HTML')
 
     async def menu(self, message: Message):
         """

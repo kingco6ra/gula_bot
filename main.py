@@ -18,8 +18,8 @@ HANDLERS = [
     GetStartingHandler,
     MenuHandler,
     OrderHandler,
-    NotifyHandler,
     UpdateHandler,
+    NotifyHandler,
 ]
 
 
