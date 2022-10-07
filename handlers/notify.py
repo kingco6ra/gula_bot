@@ -3,6 +3,7 @@
 """
 
 import logging
+from sqlite3 import IntegrityError
 
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message
@@ -31,7 +32,7 @@ class NotifyHandler:
             notify_conn = NotifyTableConnection()
             try:
                 notify_conn.insert(time, message.chat.id)
-            except Exception:
+            except IntegrityError:
                 log.error('Updating existing values.')
                 notify_conn.update(time, message.chat.id)
             await self.__bot.send_message(message.chat.id, f'Время напоминаний установлено на {time}')
@@ -40,9 +41,9 @@ class NotifyHandler:
 
     async def food_is_comming(self, message: Message):
         """Хэндлер фраз-крючков, по нахождению которых - желаем приятного аппетита"""
-        hook_words = {'поднимается', 'приехал', 'приехала', 'примите', 'привезли'}
+        hook_words = {'поднимается', 'приехал', 'приехала', 'примите', 'привезли', 'туть', 'на базе'}
         lower_message = set(map(lambda x: x.lower(), message.text.split(' ')))
-        if set(lower_message).intersection(hook_words):
+        if '?' not in message.text and set(lower_message).intersection(hook_words):
             await self.__bot.send_message(message.chat.id, 'Приятного аппетита.')
 
     def __register_handlers(self):
