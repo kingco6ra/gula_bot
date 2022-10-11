@@ -81,7 +81,7 @@ class OrderHandler:
             last_name = call.from_user.last_name
 
             order, msg, username = ButtonOrder(user_id=user_id, chat_id=chat_id, first_name=first_name, last_name=last_name).make_order()
-            answer = f'Заказ на имя <b>{username}</b> произведен успешно.\nВаш заказ:\n\n<pre>{order}</pre>\n' + f'{msg}'
+            answer = f'Заказ на имя <b>{username}</b> произведен успешно.\n<b>Не забудьте произвести оплату.</b>\n\nВаш заказ:\n\n<pre>{order}</pre>\n' + f'{msg}'
             await self.__bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, parse_mode='HTML',
                                                text=answer)
 
