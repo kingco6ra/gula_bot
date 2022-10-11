@@ -42,8 +42,10 @@ class NotifyHandler:
     async def food_is_comming(self, message: Message):
         """Хэндлер фраз-крючков, по нахождению которых - желаем приятного аппетита"""
         hook_words = {'поднимается', 'приехал', 'приехала', 'примите', 'привезли', 'туть', 'на базе'}
+        stop_words = {'?', 'не'}
         lower_message = set(map(lambda x: x.lower(), message.text.split(' ')))
-        if '?' not in message.text and set(lower_message).intersection(hook_words):
+
+        if not set(lower_message).intersection(stop_words) and set(lower_message).intersection(hook_words):
             await self.__bot.send_message(message.chat.id, 'Приятного аппетита.')
 
     def __register_handlers(self):
