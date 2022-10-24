@@ -71,6 +71,3 @@ def parse_menu(menu_dir: str) -> dict:
 
     log.info('Parse menu it was finished.')
     return new_menu
-
-
-parse_menu('/home/cobra/Загрузки/Menu_24.10-28.10.22.xlsx')
