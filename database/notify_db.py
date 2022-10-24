@@ -1,8 +1,9 @@
-import logging as log
+import logging
 import sqlite3
 from sqlite3 import OperationalError
 
 db_conn = sqlite3.connect('database.db', check_same_thread=False)
+log = logging.getLogger(__name__)
 
 
 class NotifyTableConnection:

@@ -1,11 +1,14 @@
 import asyncio
-import logging as log
+import logging
 from datetime import datetime
 from sqlite3 import OperationalError
 
 from database import MenuTableConnection, NotifyTableConnection
 from google_api import GoogleSheets
 from telebot.async_telebot import AsyncTeleBot
+
+log = logging.getLogger(__name__)
+
 
 WEEKDAYS = {
     1: "ПНД",

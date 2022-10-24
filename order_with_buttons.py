@@ -1,7 +1,9 @@
-import logging as log
+import logging
 
 from database import OrderTableConnection, NotifyTableConnection
 from google_api.work_with_sheet import get_weekday, GoogleSheets
+
+log = logging.getLogger(__name__)
 
 
 class ButtonOrder:

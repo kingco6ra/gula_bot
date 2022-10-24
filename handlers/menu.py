@@ -2,7 +2,7 @@
 Хэндлер отвечающий за загрузку меню в базу данных.
 """
 
-import logging as log
+import logging
 import os
 from datetime import datetime
 from sqlite3 import OperationalError
@@ -14,6 +14,7 @@ from database import MenuTableConnection
 from google_api import GoogleSheets
 from parse import parse_menu
 
+log = logging.getLogger(__name__)
 WEEKDAYS = {
     1: "ПНД",
     2: "ВТ",
@@ -44,9 +45,9 @@ class MenuHandler:
             menu_conn.insert_menu(menu)
             answer = '✅ Меню было успешно занесено в базу данных.'
             GoogleSheets().write_menu(menu_conn.get_all_menu())
-        except OperationalError:
-            log.error('Menu for this week already written.')
-            answer = ' ❌ Меню для этой недели уже загружено в базу данных.'
+        except OperationalError as error:
+            log.error(error)
+            answer = '❌ Произошла ошибка.'
 
         await self.__bot.edit_message_text(text=answer, chat_id=message.chat.id, message_id=start_message.message_id, parse_mode='HTML')
 
