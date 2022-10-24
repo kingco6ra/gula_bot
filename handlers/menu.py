@@ -48,6 +48,9 @@ class MenuHandler:
         except OperationalError as error:
             log.error(error)
             answer = '❌ Произошла ошибка.'
+        except AssertionError as error:
+            log.error(error)
+            answer = '❌ Структура таблицы была изменена. Необходима ручная правка.'
 
         await self.__bot.edit_message_text(text=answer, chat_id=message.chat.id, message_id=start_message.message_id, parse_mode='HTML')
 

@@ -9,6 +9,9 @@ def parse_menu(menu_dir: str) -> dict:
     log.info('Parse menu in progress...')
     weekdays = ('ПНД', 'ВТ', 'СР', 'ЧТВ', 'ПТН')
     doc: dict[str] = read_excel(menu_dir, sheet_name='Лист1', header=0).fillna('').to_dict()
+
+    assert len(doc) == 2
+
     menu = dict()
     first_column, second_column = doc.keys()
 
@@ -68,3 +71,6 @@ def parse_menu(menu_dir: str) -> dict:
 
     log.info('Parse menu it was finished.')
     return new_menu
+
+
+parse_menu('/home/cobra/Загрузки/Menu_24.10-28.10.22.xlsx')
