@@ -1,7 +1,8 @@
-import logging as log
+import logging
 import sqlite3
 from datetime import datetime
 
+log = logging.getLogger(__name__)
 db_conn = sqlite3.connect('database.db', check_same_thread=False)
 
 

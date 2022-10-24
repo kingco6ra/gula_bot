@@ -3,11 +3,13 @@
 Обновление возможно только, если бот был склонирован с GitHub.
 """
 
-import logging as log
+import logging
 from subprocess import run
 
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message
+
+log = logging.getLogger(__name__)
 
 
 class UpdateHandler:

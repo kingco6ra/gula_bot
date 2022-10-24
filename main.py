@@ -11,7 +11,7 @@ from handlers.order import OrderHandler
 from handlers.update import UpdateHandler
 from notify_syncer import NotifySyncer
 
-logging.basicConfig(format='%(message)s', level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s: %(message)s')
 log = logging.getLogger(__name__)
 
 HANDLERS = [

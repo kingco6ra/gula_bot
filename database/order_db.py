@@ -1,10 +1,11 @@
 import sqlite3
 from datetime import datetime
-import logging as log
+import logging
 from telebot.types import InlineKeyboardButton
 
 from database.menu_db import MenuTableConnection
 
+log = logging.getLogger(__name__)
 db_conn = sqlite3.connect('database.db', check_same_thread=False)
 
 
