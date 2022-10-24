@@ -1,15 +1,22 @@
+import logging
+
 from pandas import read_excel
+
+log = logging.getLogger(__name__)
 
 
 def parse_menu(menu_dir: str) -> dict:
+    log.info('Parse menu in progress...')
     weekdays = ('ПНД', 'ВТ', 'СР', 'ЧТВ', 'ПТН')
     doc: dict[str] = read_excel(menu_dir, sheet_name='Лист1', header=0).fillna('').to_dict()
     menu = dict()
+    first_column, second_column = doc.keys()
 
     temp_key: str = ''
     temp_list: list = []
     counter: int = 0
-    for line in doc['Unnamed: 0'].values():
+
+    for line in doc[first_column].values():
         if line and not line.startswith('Хлеб') and not line.startswith('Меню') and not line.startswith('Можно'):
             line = line.rstrip()
             if line in weekdays:
@@ -22,7 +29,7 @@ def parse_menu(menu_dir: str) -> dict:
             if counter == 4:
                 menu[temp_key] = temp_list
 
-    for line in doc['Unnamed: 2'].values():
+    for line in doc[second_column].values():
         if line and not line.startswith('Хлеб') and line != 'СБ' and line != ' ':
             line = line.rstrip()
             if line in weekdays:
@@ -58,4 +65,6 @@ def parse_menu(menu_dir: str) -> dict:
             'garnish': garnish,
             'salad': salad
         }
+
+    log.info('Parse menu it was finished.')
     return new_menu
