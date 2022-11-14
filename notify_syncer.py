@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from sqlite3 import OperationalError
 
-from database import MenuTableConnection, NotifyTableConnection
+from database import MenuTableConnection, NotifyTableConnection, OrderTableConnection
 from google_api import GoogleSheets
 from telebot.async_telebot import AsyncTeleBot
 
@@ -36,8 +36,12 @@ class NotifySyncer:
 
             if self.__weekday in (6, 7):
                 if notify['need_clean'] and now_time == notify['time']:
+                    chat_id = notify['chat_id']
                     GoogleSheets().clean_orders()
+                    MenuTableConnection(chat_id).drop_table()
+                    OrderTableConnection(chat_id).drop_table()
                     log.info('Orders has been cleaned.')
+
                     self.__notify_conn.need_clean_table(notify['chat_id'], False)
                     await self.__bot.send_message(notify['chat_id'], 'Таблица заказов успешно очищена. Хороших выходных.')
                 continue

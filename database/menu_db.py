@@ -8,7 +8,7 @@ db_conn = sqlite3.connect('database.db', check_same_thread=False)
 
 class MenuTableConnection:
     def __init__(self, chat_id: int):
-        self.__table_name = f'menu_{chat_id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
+        self.__menu_table_name = f'menu_{chat_id}_{datetime.now().isocalendar()[1]}'.replace('-', '')
         self.__order_table_name = f'order_{chat_id}_{datetime.now().strftime("%m/%d/%Y").replace("/", "_")}'.replace('-', '')
 
     def create(self):
@@ -17,7 +17,7 @@ class MenuTableConnection:
             cursor = db_conn.cursor()
             cursor.execute(
                 f'''
-                    create table "{self.__table_name}"
+                    create table "{self.__menu_table_name}"
                         (
                             weekday TEXT not null,
                             soup    TEXT not null,
@@ -26,7 +26,7 @@ class MenuTableConnection:
                             salad TEXT not null 
                         )
                 ''')
-        log.info(f'New table has been created. Table name: {self.__table_name}')
+        log.info(f'New table has been created. Table name: {self.__menu_table_name}')
 
     def insert_menu(self, menu: dict[str, [str, [list[str]]]]):
         log.info('Writing new menu in table.')
@@ -39,7 +39,7 @@ class MenuTableConnection:
                 cursor = db_conn.cursor()
                 cursor.execute(
                     f'''
-                INSERT INTO {self.__table_name} VALUES(
+                INSERT INTO {self.__menu_table_name} VALUES(
                 '{weekday}', '{soup}', '{second_course}', '{garnish}', '{salad}'
                 )
                 ''')
@@ -50,7 +50,7 @@ class MenuTableConnection:
             cursor = db_conn.cursor()
             cursor.execute(
                 f'''
-                SELECT * FROM {self.__table_name}
+                SELECT * FROM {self.__menu_table_name}
                 WHERE weekday = '{weekday}'
                 '''
             )
@@ -69,7 +69,7 @@ class MenuTableConnection:
             cursor = db_conn.cursor()
             cursor.execute(
                 f'''
-                SELECT * FROM {self.__table_name}
+                SELECT * FROM {self.__menu_table_name}
                 '''
             )
         menu: dict[str, dict[int, str]] = {}
@@ -83,3 +83,10 @@ class MenuTableConnection:
             }
 
         return menu
+
+    def drop_table(self):
+        with db_conn:
+            cursor = db_conn.cursor()
+            cursor.execute(f'''
+            DROP TABLE {self.__menu_table_name}
+            ''')

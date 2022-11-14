@@ -14,6 +14,7 @@ from telebot.types import CallbackQuery, InlineKeyboardMarkup, Message
 from database import MenuTableConnection, NotifyTableConnection, OrderTableConnection
 from google_api import GoogleSheets
 from order_with_buttons import ButtonOrder
+from parse import get_orders
 
 WEEKDAYS = {
     1: "ПНД",
@@ -99,7 +100,11 @@ class OrderHandler:
         else:
             await self.__bot.send_message(message.chat.id, 'Возникли проблемы при заполнении таблицы.')
 
+    async def get_orders(self, message: Message):
+        await self.__bot.send_message(message.chat.id, get_orders(message.chat.id), parse_mode='Markdown')
+
     def __register_handlers(self):
         self.__bot.register_message_handler(self.order, commands=['order'])
         self.__bot.register_message_handler(self.order_button, commands=['заказ'])
+        self.__bot.register_message_handler(self.get_orders, commands=['список'])
         self.__bot.register_callback_query_handler(self.callback_menu, func=lambda call: True)
