@@ -94,8 +94,8 @@ class GoogleSheets:
         }
         spreadsheets.batchUpdate(spreadsheetId=SPREADSHEET_ID, body=body).execute()
 
-    def everyone_paid(self) -> None:
-        # TODO: красить только заполненные клетки
+    @staticmethod
+    def order_with_bot(row_id) -> None:
         weekday = datetime.now().isoweekday()
         body = {
             "requests": [
@@ -103,8 +103,8 @@ class GoogleSheets:
                     "updateCells": {
                         "range": {
                             "sheetId": 0,
-                            "startRowIndex": 1,
-                            "endRowIndex": len(self.get_rows()),
+                            "startRowIndex": row_id - 1,
+                            "endRowIndex": row_id,
                             "startColumnIndex": weekday,
                             "endColumnIndex": weekday + 1
                         },
@@ -119,13 +119,12 @@ class GoogleSheets:
                                         }
                                     }
                                 ]
-                            }] for _ in range(len(self.get_rows()) - 1)
+                            }] for _ in range(1)
                         ],
                         "fields": "userEnteredFormat.backgroundColor"
                     }
                 }
             ]
-
         }
         spreadsheets.batchUpdate(spreadsheetId=SPREADSHEET_ID, body=body).execute()
 

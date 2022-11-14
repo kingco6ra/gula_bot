@@ -48,7 +48,7 @@ class OrderTableConnection:
             WHERE user_id = {user_id}
             ''')
 
-    def get_all(self, user_id: int):
+    def get_user_order(self, user_id: int):
         log.info('Getting order from table for user: %s', user_id)
         with db_conn:
             cursor = db_conn.cursor()
@@ -59,6 +59,16 @@ class OrderTableConnection:
 
         return [dish + '\n' for dish in cursor.fetchall()[0][1:]]
 
+    def get_all(self):
+        log.info('Getting all orders from table.')
+        with db_conn:
+            cursor = db_conn.cursor()
+            cursor.execute(f'''
+            SELECT * FROM {self.__order_table_name}
+            ''')
+        return cursor.fetchall()
+
+    # TODO: идеологически правильнее было бы перенести в menu_db
     def get_menu_markup(self, day):
         first, second, garnier, salad = self.__menu_conn.get_menu(day)
 
@@ -68,3 +78,10 @@ class OrderTableConnection:
             'garnier': [InlineKeyboardButton(dish, callback_data=f'garnier_2_{index}') for index, dish in enumerate(garnier.split('\n')[:-1])],
             'salad': [InlineKeyboardButton(dish, callback_data=f'salad_3_{index}') for index, dish in enumerate(salad.split('\n')[:-1])],
         }
+
+    def drop_table(self):
+        with db_conn:
+            cursor = db_conn.cursor()
+            cursor.execute(f'''
+            DROP TABLE {self.__order_table_name}
+            ''')

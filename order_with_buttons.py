@@ -59,7 +59,7 @@ class ButtonOrder:
 
     def make_order(self) -> tuple[str, str, str]:
         log.info('Start writing order in table')
-        order = OrderTableConnection(self.__chat_id).get_all(self.__user_id)
+        order = OrderTableConnection(self.__chat_id).get_user_order(self.__user_id)
         row_id, msg, username = self.get_row_id()
         day = get_weekday()
         order = ''.join(order)
@@ -74,6 +74,7 @@ class ButtonOrder:
             ]
         }
         self.__google_sheets.write(body)
+        self.__google_sheets.order_with_bot(row_id)
         log.info(f'Order has been created for %s has been created.', self.__name)
         NotifyTableConnection().need_clean_table(self.__chat_id, True)
         return order, msg, username
