@@ -74,7 +74,6 @@ class ButtonOrder:
             ]
         }
         self.__google_sheets.write(body)
-        self.__google_sheets.order_with_bot(row_id)
         log.info(f'Order has been created for %s has been created.', self.__name)
         NotifyTableConnection().need_clean_table(self.__chat_id, True)
         return order, msg, username
